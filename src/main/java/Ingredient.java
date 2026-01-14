@@ -6,6 +6,15 @@ public class Ingredient {
     private CategoryEnum category;
     private Double price;
     private Dish dish;
+    private Double quantity;
+
+    public Double getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Double quantity) {
+        this.quantity = quantity;
+    }
 
     public Ingredient() {
     }
@@ -85,6 +94,7 @@ public class Ingredient {
                 ", category=" + category +
                 ", price=" + price +
                 ", dishName=" + getDishName() +
+                ", quantity=" + quantity +
                 '}';
     }
 }
