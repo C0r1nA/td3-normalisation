@@ -261,6 +261,257 @@ public class DataRetriever {
 
         try (PreparedStatement ps = conn.prepareStatement(setValSql)) {
             ps.executeQuery();
+
+
         }
+    }
+
+    public void saveIngredient(Ingredient ingredient) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+
+            String sql = "INSERT INTO Ingredient(name, price, category) VALUES (?, ?, ?)";
+            PreparedStatement ps = con.prepareStatement(sql);
+            ps.setString(1, ingredient.getName());
+            ps.setDouble(2, ingredient.getPrice());
+            ps.setString(3, ingredient.getCategory());
+
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Ingredient findIngredientById(int id) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+
+            String sql = "SELECT * FROM Ingredient WHERE id=?";
+            PreparedStatement ps = con.prepareStatement(sql);
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return new Ingredient(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getDouble("price"),
+                        rs.getString("category")
+                );
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public List<Ingredient> findAllIngredients() {
+        List<Ingredient> list = new ArrayList<>();
+
+        try (Connection con = DatabaseConnection.getConnection()) {
+
+            String sql = "SELECT * FROM Ingredient";
+            PreparedStatement ps = con.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                list.add(new Ingredient(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getDouble("price"),
+                        rs.getString("category")
+                ));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+
+    public void saveDish(Dish dish) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+
+            String sql = "INSERT INTO Dish(name, dish_type, selling_price) VALUES (?, ?, ?)";
+            PreparedStatement ps = con.prepareStatement(sql);
+            ps.setString(1, dish.getName());
+            ps.setString(2, dish.getDishType());
+            ps.setObject(3, dish.getSellingPrice());
+
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Dish findDishById(int id) {
+        Dish dish = null;
+
+        try (Connection con = DatabaseConnection.getConnection()) {
+
+            String sql = "SELECT * FROM Dish WHERE id=?";
+            PreparedStatement ps = con.prepareStatement(sql);
+            ps.setInt(1, id);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                dish = new Dish(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("dish_type"),
+                        rs.getObject("selling_price", Double.class)
+                );
+            }
+
+            if (dish != null) {
+                List<DishIngredient> links = findDishIngredientsByDishId(id);
+                for (DishIngredient di : links) {
+                    dish.addDishIngredient(di);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return dish;
+    }
+
+    public List<Dish> findAllDishes() {
+        List<Dish> list = new ArrayList<>();
+
+        try (Connection con = DatabaseConnection.getConnection()) {
+
+            String sql = "SELECT * FROM Dish ORDER BY id";
+            PreparedStatement ps = con.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                Dish dish = new Dish(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("dish_type"),
+                        rs.getObject("selling_price", Double.class)
+                );
+
+                List<DishIngredient> links = findDishIngredientsByDishId(dish.getId());
+                for (DishIngredient di : links) {
+                    dish.addDishIngredient(di);
+                }
+
+                list.add(dish);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+
+    public void saveDishIngredient(DishIngredient di) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+
+            String sql =
+                    "INSERT INTO DishIngredient(id_dish, id_ingredient, quantity_required, unit) " +
+                            "VALUES (?, ?, ?, ?)";
+
+            PreparedStatement ps = con.prepareStatement(sql);
+            ps.setInt(1, di.getDish().getId());
+            ps.setInt(2, di.getIngredient().getId());
+            ps.setDouble(3, di.getQuantityRequired());
+            ps.setString(4, di.getUnit());
+
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public List<DishIngredient> findDishIngredientsByDishId(int dishId) {
+        List<DishIngredient> list = new ArrayList<>();
+
+        try (Connection con = DatabaseConnection.getConnection()) {
+
+            String sql = "SELECT * FROM DishIngredient WHERE id_dish=?";
+            PreparedStatement ps = con.prepareStatement(sql);
+            ps.setInt(1, dishId);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Ingredient ing = findIngredientById(rs.getInt("id_ingredient"));
+
+                list.add(new DishIngredient(
+                        rs.getInt("id"),
+                        null,
+                        ing,
+                        rs.getDouble("quantity_required"),
+                        rs.getString("unit")
+                ));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public List<DishIngredient> findAllDishIngredients() {
+        List<DishIngredient> list = new ArrayList<>();
+
+        try (Connection con = DatabaseConnection.getConnection()) {
+
+            String sql = "SELECT * FROM DishIngredient";
+            PreparedStatement ps = con.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Ingredient ing = findIngredientById(rs.getInt("id_ingredient"));
+
+                list.add(new DishIngredient(
+                        rs.getInt("id"),
+                        null,
+                        ing,
+                        rs.getDouble("quantity_required"),
+                        rs.getString("unit")
+                ));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+
+    public double getDishCost(Dish d) {
+        double total = 0;
+
+        for (DishIngredient di : d.getIngredients()) {
+            total += di.getIngredient().getPrice() * di.getQuantityRequired();
+        }
+
+        return total;
+    }
+
+    public double getGrossMargin(Dish d) {
+        if (d.getSellingPrice() == null) {
+            throw new RuntimeException(
+                    "Impossible de calculer la marge : prix NULL pour " + d.getName()
+            );
+        }
+
+        return d.getSellingPrice() - getDishCost(d);
     }
 }
